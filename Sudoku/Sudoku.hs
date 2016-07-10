@@ -6,14 +6,14 @@ valAt::Sudoku->Int->Int->Int
 valAt board row col = board!!row!!col
 rowAt::Sudoku->Int->Int->[Int]
 rowAt board row _ |row<0||row>8 = []
-                  |otherwise    = filter (\x->x/=0) [valAt board row col| col <-[0..8]]
+                  |otherwise    = filter (/=0) [valAt board row col| col <-[0..8]]
 colAt::Sudoku->Int->Int->[Int]
 colAt board _ col |col<0||col>8 = []
-                  |otherwise    = filter (\x->x/=0) [valAt board row col| row <-[0..8]]
+                  |otherwise    = filter (/=0) [valAt board row col| row <-[0..8]]
 boxAt::Sudoku->Int->Int->[Int]
 boxAt board row col = let bigRow = row `div` 3
                           bigCol = col `div` 3
-                       in filter (\x->x/=0) [valAt board (bigRow*3+i) (bigCol*3+j) | i<-[0..2], j<-[0..2]]
+                       in filter (/=0) [valAt board (bigRow*3+i) (bigCol*3+j) | i<-[0..2], j<-[0..2]]
 validAt::Sudoku->Int->Int->[Int]
 validAt board row col = let r = rowAt board row col
                             c = colAt board row col
@@ -21,7 +21,7 @@ validAt board row col = let r = rowAt board row col
                         in [x | x<-[1..9], not (x `elem` (r ++ b ++ c))]
 
 placeAt::Sudoku->Int->Int->Int->Sudoku
-placeAt board row col value = [[if x==row && y==col then value else (valAt board x y) | y<-[0..8]] | x<-[0..8]]
+placeAt board row col value = [[if x==row && y==col then value else valAt board x y | y<-[0..8]] | x<-[0..8]]
 
 solve::Sudoku->[Sudoku]
 solve x = generate 0 0 x
