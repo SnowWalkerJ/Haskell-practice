@@ -123,7 +123,12 @@ module Markdown where
 
 ------------- Header --------------
     html content = "<!DOCTYPE html>\n<html>\n" ++ header ++ body content ++ "</html>"
-    header = "<head>\n<style type=\"text/css\">\n.center {text-align: center;}\n.left {text-align: left;}\n.right {text-align: right;}\ntable {border-collapse:collapse;}</style>\n</head>\n"
+    header = "<head>\n" ++ 
+        "<style type=\"text/css\">\n" ++
+        ".center {text-align: center;}\n" ++
+        ".left {text-align: left;}\n" ++
+        ".right {text-align: right;}\n" ++
+        "table {border-collapse:collapse;}</style>\n</head>\n"
     body content = "<body>" ++ content ++ "</body>"
 
 ------------- Header --------------
