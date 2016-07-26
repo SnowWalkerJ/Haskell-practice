@@ -86,6 +86,10 @@ module Markdown where
 ------------- List  ---------------
 ------------- Table ---------------
     data Align = AlignLeft | AlignCenter | AlignRight
+    instance Show Align where
+        show AlignLeft = "left"
+        show AlignCenter = "center"
+        show AlignRight = "right"
     tableParser::CharParser () String
     tableParser = do
         titles  <- titleParser
@@ -93,10 +97,11 @@ module Markdown where
         aligns  <- alignParser
         char '\n'
         rows    <- sepEndBy rowParser (char '\n')
-        let tr row = "<tr>\n" ++ concatMap td row ++ "</tr>\n"
-            td col = "\t<td>" ++ col ++ "</td>\n"
-            th col = "\t<th>" ++ col ++ "</th>\n"
-        return $ "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">\n<tr>\n" ++ concatMap th titles ++ "</tr>\n" ++ concatMap tr rows ++ "</table>"
+        let tr row = "<tr>\n" ++ concatMap td alignedRow ++ "</tr>\n"
+                where alignedRow = zip aligns row
+            td (align, col) = "\t<td class=\"" ++ show align ++ "\">" ++ col ++ "</td>\n"
+            th (align, col) = "\t<th class=\"" ++ show align ++ "\">" ++ col ++ "</th>\n"
+        return $ "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">\n<tr>\n" ++ concatMap th (zip aligns titles) ++ "</tr>\n" ++ concatMap tr rows ++ "</table>"
 
     titleParser::CharParser () [String]
     titleParser = char '|' >> endBy (many (noneOf "|\n")) (char '|')
@@ -116,6 +121,13 @@ module Markdown where
 
 ------------- Table ---------------
 
+------------- Header --------------
+    html content = "<!DOCTYPE html>\n<html>\n" ++ header ++ body content ++ "</html>"
+    header = "<head>\n<style type=\"text/css\">\n.center {text-align: center;}\n.left {text-align: left;}\n.right {text-align: right;}\ntable {border-collapse:collapse;}</style>\n</head>\n"
+    body content = "<body>" ++ content ++ "</body>"
+
+------------- Header --------------
+
     parser = do 
         parsed <- flip sepEndBy (char '\n') $ 
             try hrParser
@@ -125,4 +137,10 @@ module Markdown where
             <|> try paragraphParser
             <|> return ""
         return $ concat parsed
+
+    parseMarkdown markdown = 
+        let parsed = parse parser "ParseError" markdown
+        in case parsed of
+            Left err -> "ParseError"
+            Right result -> html result
 
