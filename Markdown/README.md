@@ -8,6 +8,6 @@
 
 ### Usage
 ```
-> ./bin/Markdown < test.hs > test.html
+> ./bin/Markdown < test.md > test.html
 ```
 
