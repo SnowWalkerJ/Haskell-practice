@@ -1,12 +1,13 @@
 module Markdown where
-    import Text.ParserCombinators.Parsec
-    import Control.Monad
+    import Prelude hiding (fail)
+    import Parsec
+    import Control.Monad hiding (fail)
 
-    anything::CharParser () String
+    anything::Parser String
     anything = many (noneOf "\n")
 
     -- <b>
-    boldParser::CharParser () String
+    boldParser::Parser String
     boldParser = do
         string "**"
         content <- many (noneOf "*\n")
@@ -14,7 +15,7 @@ module Markdown where
         return $ "<b>" ++ content ++ "</b>"
 
     -- <i>
-    italicParser::CharParser () String
+    italicParser::Parser String
     italicParser = do
         char '*'
         content <- many (noneOf "*\n")
@@ -28,7 +29,7 @@ module Markdown where
         return $ thisParsed ++ nextParsed
 
     -- <h1> <h2>...
-    headParser::CharParser () String
+    headParser::Parser String
     headParser = do
         many (char ' ')
         sharps <- many1 (char '#')
@@ -48,7 +49,7 @@ module Markdown where
     atLeast n ps = do
         s <- many ps
         if length s >= n then return s
-        else fail ""
+        else fail
 
     -- returns the number of a particular parser
     countParser parser = do
@@ -62,16 +63,17 @@ module Markdown where
 
 -------------- List ---------------
     -- <ul>
-    ulParser::Int->CharParser () String
+    ulParser::Int->Parser String
     ulParser upLevel = do
         n <- countParser (char '\t')
-        if n < upLevel then fail "" else char '-'
+        if n < upLevel then fail else char '-'
         many $ oneOf " \t"
         thisItem <- contentParser
-        char '\n'
-        items <- many (try (liParser n) <|> try(ulParser n)) <|> return [""]
+        
+        items <- try (char '\n' >>endBy (try (liParser n) <|> try(ulParser n)) (char '\n')) <|> return [""]
         let indent = replicate n '\t'
             itemHTML = indent ++ "\t<li>" ++ thisItem ++ "</li>\n"
+        feed "\n"
         return $ indent ++ "<ul>\n" ++ itemHTML ++ concat items ++ indent ++ "</ul>\n"
 
     -- <li>
@@ -80,7 +82,6 @@ module Markdown where
         char '-'
         many (oneOf " \t")
         item <- contentParser
-        char '\n'
         let indent = replicate (n+1) '\t'
         return $ indent ++ "<li>" ++ item ++ "</li>\n"
 ------------- List  ---------------
@@ -90,7 +91,7 @@ module Markdown where
         show AlignLeft = "left"
         show AlignCenter = "center"
         show AlignRight = "right"
-    tableParser::CharParser () String
+    tableParser::Parser String
     tableParser = do
         titles  <- titleParser
         char '\n'
@@ -103,7 +104,7 @@ module Markdown where
             th (align, col) = "\t<th class=\"" ++ show align ++ "\">" ++ col ++ "</th>\n"
         return $ "<table border=\"1\" cellspacing=\"0\" cellpadding=\"4\">\n<tr>\n" ++ concatMap th (zip aligns titles) ++ "</tr>\n" ++ concatMap tr rows ++ "</table>"
 
-    titleParser::CharParser () [String]
+    titleParser::Parser [String]
     titleParser = char '|' >> endBy (many (noneOf "|\n")) (char '|')
     
     alignParser = char '|' >> endBy (do
@@ -143,9 +144,10 @@ module Markdown where
             <|> return ""
         return $ concat parsed
 
+    parseMarkdown::String->String
     parseMarkdown markdown = 
-        let parsed = parse parser "ParseError" markdown
+        let parsed = parse parser markdown
         in case parsed of
-            Left err -> "ParseError"
-            Right result -> html result
+            Nothing -> "ParseError"
+            Just result -> html result
 

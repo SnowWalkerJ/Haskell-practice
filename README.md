@@ -10,5 +10,5 @@ Haskell是一个纯函数式编程语言，它抛弃了命令式编程中的可�
 - 数独
 - 填字游戏(Crossword)
 - Markdown 解析
-
+- 自己实现的Parsec库，并在此基础上移植了上面的Markdown程序
 
